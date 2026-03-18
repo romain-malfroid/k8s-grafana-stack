@@ -40,17 +40,40 @@ helm install k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack -n monitoring
 
 ### k3s (Traefik Gateway API)
 
-Download the k3s values template, fill in your gateway name and domain, then install:
+Create a `values.yaml` with the following content, fill in your values, then install:
+
+```yaml
+# k3s fixes
+k8s-monitoring:
+  alloy-metrics:
+    alloy:
+      clustering:
+        enabled: false
+  clusterMetrics:
+    node-exporter:
+      deploy: true
+      hostNetwork: false
+      hostPID: false
+
+# Traefik HTTPRoute for Grafana
+traefik:
+  enabled: true
+  gatewayName: "your-gateway-name"      # ← change this
+  gatewayNamespace: "default"           # ← change this
+
+# Grafana subpath
+grafana:
+  grafana.ini:
+    server:
+      root_url: "http://your-domain/grafana"  # ← change this
+      serve_from_sub_path: true
+```
 
 ```bash
 helm repo add k8s-grafana-stack https://romain-malfroid.github.io/k8s-grafana-stack
 helm repo update
-
-curl -O https://raw.githubusercontent.com/romain-malfroid/k8s-grafana-stack/main/charts/k8s-grafana-stack/values-k3s.yaml
-# Edit values-k3s.yaml: set gatewayName, gatewayNamespace, root_url
-
 helm install k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack \
-  -f values-k3s.yaml -n monitoring --create-namespace
+  -f values.yaml -n monitoring --create-namespace
 ```
 
 ### Upgrade
