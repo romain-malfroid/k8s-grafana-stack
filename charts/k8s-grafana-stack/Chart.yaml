@@ -2,7 +2,7 @@ apiVersion: v2
 name: k8s-grafana-stack
 description: Complete Grafana observability stack — metrics, logs, traces and collection via Alloy
 type: application
-version: 0.1.0
+version: 0.1.1
 
 dependencies:
   # Collection layer — Alloy (replaces node-exporter, kube-state-metrics, Promtail)
