@@ -28,73 +28,52 @@ Apps (OTLP traces)      ──push──────────► Tempo (stora
 
 ---
 
-## Prerequisites
-
-```bash
-helm repo add grafana https://grafana.github.io/helm-charts
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm dependency update
-```
-
----
-
 ## Install
 
 ### Any Kubernetes distribution
 
 ```bash
-helm install k8s-grafana-stack . -f values.yaml -n monitoring --create-namespace
+helm repo add k8s-grafana-stack https://romain-malfroid.github.io/k8s-grafana-stack
+helm repo update
+helm install k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack -n monitoring --create-namespace
 ```
 
 ### k3s (Traefik Gateway API)
 
-```bash
-helm install k8s-grafana-stack . -f values.yaml -f values-k3s.yaml -f your-overrides.yaml -n monitoring --create-namespace
-```
+Download the k3s values template, fill in your gateway name and domain, then install:
 
-`values-k3s.yaml` fixes k3s-specific issues (node-exporter port conflicts, Alloy clustering).
-Add a third `-f your-overrides.yaml` for your deployment-specific values (gateway name, domain).
+```bash
+helm repo add k8s-grafana-stack https://romain-malfroid.github.io/k8s-grafana-stack
+helm repo update
+
+curl -O https://raw.githubusercontent.com/romain-malfroid/k8s-grafana-stack/main/charts/k8s-grafana-stack/values-k3s.yaml
+# Edit values-k3s.yaml: set gatewayName, gatewayNamespace, root_url
+
+helm install k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack \
+  -f values-k3s.yaml -n monitoring --create-namespace
+```
 
 ### Upgrade
 
 ```bash
-helm upgrade k8s-grafana-stack . -f values.yaml [-f values-k3s.yaml] [-f your-overrides.yaml] -n monitoring
+helm upgrade k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack \
+  [-f values-k3s.yaml] -n monitoring
 ```
 
 ---
 
 ## Configuration
 
-All configuration is in `values.yaml`. Key sections:
+`values-k3s.yaml` is the only file you need to customize. Key settings:
 
-| Section | Key settings |
-|---------|-------------|
-| `k8s-monitoring` | `cluster.name`, collection destinations, node-exporter |
-| `prometheus.server` | `retention`, `persistentVolume.size` |
-| `loki` | `deploymentMode` (SingleBinary), MinIO storage |
-| `tempo` | `retention`, OTLP receivers |
-| `grafana` | `adminPassword`, datasources, persistence |
-
-### Platform overrides file (example)
-
-```yaml
-# your-overrides.yaml — deployment-specific values, not committed to the chart repo
-traefik:
-  enabled: true
-  gatewayName: "my-gateway"
-  gatewayNamespace: "default"
-
-grafana:
-  grafana.ini:
-    server:
-      root_url: "http://my-domain.com/grafana"
-      serve_from_sub_path: true
-```
-
-### Grafana default credentials
-
-`admin` / `admin` — change via `grafana.adminPassword` or after first login.
+| Key | Description |
+|-----|-------------|
+| `traefik.gatewayName` | Your Traefik Gateway resource name |
+| `traefik.gatewayNamespace` | Namespace where the Gateway lives |
+| `grafana.grafana.ini.server.root_url` | Your domain + `/grafana` |
+| `k8s-monitoring.cluster.name` | Cluster name shown in dashboards |
+| `prometheus.server.retention` | Metrics retention (default: `7d`) |
+| `grafana.adminPassword` | Grafana admin password (default: `admin`) |
 
 ---
 
