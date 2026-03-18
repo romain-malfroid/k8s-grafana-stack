@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,43 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - uses: azure/setup-helm@v4
 
-      - name: Add Helm repos
+      - name: Add dependency repos
         run: |
           helm repo add grafana https://grafana.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-          helm repo update
 
-      - name: Get chart version
-        id: version
-        run: echo "version=$(grep '^version:' Chart.yaml | awk '{print $2}')" >> $GITHUB_OUTPUT
-
-      - name: Build and package chart
-        run: |
-          helm dependency update
-          helm package . -d /tmp/release/
-
-      - name: Publish to gh-pages
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Work in isolated /tmp directory to avoid workspace contamination
-          mkdir /tmp/gh-pages && cd /tmp/gh-pages
-          git init
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git fetch origin gh-pages
-          git checkout gh-pages
-
-          # Remove ALL tgz files (clean slate — only keep the new chart)
-          rm -f *.tgz
-
-          # Add new package and regenerate index
-          cp /tmp/release/k8s-grafana-stack-*.tgz .
-          helm repo index . --url https://romain-malfroid.github.io/k8s-grafana-stack
-
-          git add -A
-          git diff --staged --quiet || git commit -m "Release v${{ steps.version.outputs.version }}"
-          git push origin gh-pages
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        with:
+          charts_dir: charts
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
