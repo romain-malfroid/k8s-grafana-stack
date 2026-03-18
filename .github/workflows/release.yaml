@@ -23,21 +23,34 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
-      - name: Build dependencies
-        run: helm dependency update
+      - name: Get chart version
+        id: version
+        run: echo "version=$(grep '^version:' Chart.yaml | awk '{print $2}')" >> $GITHUB_OUTPUT
 
-      - name: Package chart
-        run: helm package . -d /tmp/release/
+      - name: Build and package chart
+        run: |
+          helm dependency update
+          helm package . -d /tmp/release/
 
       - name: Publish to gh-pages
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Work in isolated /tmp directory to avoid workspace contamination
+          mkdir /tmp/gh-pages && cd /tmp/gh-pages
+          git init
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git fetch origin gh-pages
           git checkout gh-pages
-          cp /tmp/release/*.tgz .
+
+          # Remove any previously published chart versions
+          rm -f k8s-grafana-stack-*.tgz
+
+          # Add new package and regenerate index
+          cp /tmp/release/k8s-grafana-stack-*.tgz .
           helm repo index . --url https://romain-malfroid.github.io/k8s-grafana-stack
-          git add *.tgz index.yaml
-          VERSION=$(grep '^version:' $GITHUB_WORKSPACE/Chart.yaml | awk '{print $2}')
-          git diff --staged --quiet || git commit -m "Release v${VERSION}"
+
+          git add -A
+          git diff --staged --quiet || git commit -m "Release v${{ steps.version.outputs.version }}"
           git push origin gh-pages
