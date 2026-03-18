@@ -39,6 +39,11 @@ k8s-monitoring:
       metricsTuning:
         includeMetrics:
           - machine_cpu_cores
+    # Disable optional features not needed for basic observability
+    opencost:
+      enabled: false
+    kepler:
+      enabled: false
 
   # Kubernetes events as logs
   clusterEvents:
@@ -57,12 +62,6 @@ k8s-monitoring:
   alloy-singleton:
     enabled: true
   alloy-receiver:
-    enabled: false
-
-  # Disable features not needed for basic observability
-  opencost:
-    enabled: false
-  kepler:
     enabled: false
 
 # ============================================================
