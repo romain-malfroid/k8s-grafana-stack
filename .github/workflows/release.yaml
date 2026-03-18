@@ -4,22 +4,23 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'Chart.yaml'
+      - 'Chart.lock'
+      - 'values.yaml'
+      - 'values-k3s.yaml'
+      - 'templates/**'
+
+permissions:
+  contents: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v4
 
       - name: Add Helm repos
         run: |
@@ -27,7 +28,21 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.6.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Build dependencies
+        run: helm dependency update
+
+      - name: Package chart
+        run: helm package . -d /tmp/release/
+
+      - name: Publish to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git checkout gh-pages
+          cp /tmp/release/*.tgz .
+          helm repo index . --url https://romain-malfroid.github.io/k8s-grafana-stack
+          git add *.tgz index.yaml
+          VERSION=$(grep '^version:' $GITHUB_WORKSPACE/Chart.yaml | awk '{print $2}')
+          git diff --staged --quiet || git commit -m "Release v${VERSION}"
+          git push origin gh-pages
