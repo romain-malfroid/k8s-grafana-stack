@@ -34,8 +34,8 @@ jobs:
 
       - name: Publish to gh-pages
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           # Work in isolated /tmp directory to avoid workspace contamination
           mkdir /tmp/gh-pages && cd /tmp/gh-pages
@@ -44,8 +44,8 @@ jobs:
           git fetch origin gh-pages
           git checkout gh-pages
 
-          # Remove any previously published chart versions
-          rm -f k8s-grafana-stack-*.tgz
+          # Remove ALL tgz files (clean slate — only keep the new chart)
+          rm -f *.tgz
 
           # Add new package and regenerate index
           cp /tmp/release/k8s-grafana-stack-*.tgz .
