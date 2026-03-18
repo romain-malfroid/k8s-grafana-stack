@@ -1,0 +1,35 @@
+apiVersion: v2
+name: k8s-grafana-stack
+description: Complete Grafana observability stack — metrics, logs, traces and collection via Alloy
+type: application
+version: 0.1.0
+
+dependencies:
+  # Collection layer — Alloy (replaces node-exporter, kube-state-metrics, Promtail)
+  - name: k8s-monitoring
+    version: "3.8.4"
+    repository: https://grafana.github.io/helm-charts
+
+  # Metrics storage + alerting
+  - name: prometheus
+    version: "28.13.0"
+    repository: https://prometheus-community.github.io/helm-charts
+
+  - name: alertmanager
+    version: "1.33.1"
+    repository: https://prometheus-community.github.io/helm-charts
+
+  # Log storage
+  - name: loki
+    version: "6.55.0"
+    repository: https://grafana.github.io/helm-charts
+
+  # Trace storage
+  - name: tempo
+    version: "1.24.4"
+    repository: https://grafana.github.io/helm-charts
+
+  # Visualization (independent — connects to all datasources)
+  - name: grafana
+    version: "10.5.15"
+    repository: https://grafana.github.io/helm-charts

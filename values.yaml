@@ -1,0 +1,235 @@
+# k8s-grafana-stack — Common values
+# Works on any Kubernetes distribution (k3s, EKS, GKE, vanilla k8s...)
+# For platform-specific overrides, use values-k3s.yaml
+
+# ============================================================
+# TRAEFIK GATEWAY (disabled by default — enable in platform values)
+# ============================================================
+traefik:
+  enabled: false
+  gatewayName: ""
+  gatewayNamespace: ""
+
+# ============================================================
+# COLLECTION — Alloy via k8s-monitoring (Grafana Labs)
+# Replaces: node-exporter, kube-state-metrics, Promtail
+# ============================================================
+k8s-monitoring:
+  cluster:
+    name: "local"
+
+  destinations:
+    - name: prometheus
+      type: prometheus
+      url: http://k8s-grafana-stack-prometheus-server/api/v1/write
+    - name: loki
+      type: loki
+      url: http://k8s-grafana-stack-loki:3100/loki/api/v1/push
+    - name: tempo
+      type: otlp
+      url: http://k8s-grafana-stack-tempo:4317
+      protocol: grpc
+
+  # Kubernetes cluster metrics
+  clusterMetrics:
+    enabled: true
+    destinations: [prometheus]
+    # Add machine_cpu_cores (needed by k8s dashboards) — filtered out by default allow-list
+    cadvisor:
+      metricsTuning:
+        includeMetrics:
+          - machine_cpu_cores
+
+  # Kubernetes events as logs
+  clusterEvents:
+    enabled: true
+    destinations: [loki]
+
+  # Pod logs collection
+  podLogs:
+    enabled: true
+    destinations: [loki]
+
+  alloy-metrics:
+    enabled: true
+  alloy-logs:
+    enabled: true
+  alloy-singleton:
+    enabled: true
+  alloy-receiver:
+    enabled: false
+
+  # Disable features not needed for basic observability
+  opencost:
+    enabled: false
+  kepler:
+    enabled: false
+
+# ============================================================
+# METRICS — Prometheus + Alertmanager (prometheus-community)
+# ============================================================
+prometheus:
+  server:
+    # Accept metrics pushed by Alloy
+    extraFlags:
+      - web.enable-remote-write-receiver
+      - web.enable-lifecycle
+    retention: 7d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    persistentVolume:
+      enabled: true
+      size: 5Gi
+
+  # Disable Kubernetes scrape jobs that duplicate Alloy collection
+  scrapeConfigs:
+    kubernetes-nodes:
+      enabled: false
+    kubernetes-nodes-cadvisor:
+      enabled: false
+    kubernetes-pods:
+      enabled: false
+    kubernetes-service-endpoints:
+      enabled: false
+    kubernetes-service-endpoints-slow:
+      enabled: false
+    kubernetes-services:
+      enabled: false
+    kubernetes-pods-slow:
+      enabled: false
+
+  # Disable built-in scrapers — Alloy handles collection
+  alertmanager:
+    enabled: false  # managed separately
+  prometheus-node-exporter:
+    enabled: false  # managed by k8s-monitoring
+  kube-state-metrics:
+    enabled: false  # managed by k8s-monitoring
+
+alertmanager:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  persistence:
+    enabled: true
+    size: 1Gi
+
+# ============================================================
+# LOGS — Loki (Grafana Labs)
+# ============================================================
+loki:
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    schemaConfig:
+      configs:
+        - from: "2024-04-01"
+          store: tsdb
+          object_store: s3
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    limits_config:
+      allow_structured_metadata: true
+      volume_enabled: true
+  minio:
+    enabled: true
+  deploymentMode: SingleBinary
+  singleBinary:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+
+# ============================================================
+# TRACES — Tempo (Grafana Labs)
+# ============================================================
+tempo:
+  tempo:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+    retention: 24h
+  persistence:
+    enabled: true
+    size: 5Gi
+  traces:
+    otlp:
+      grpc:
+        enabled: true
+      http:
+        enabled: true
+
+# ============================================================
+# VISUALIZATION — Grafana (Grafana Labs)
+# Independent — connects to Prometheus, Loki and Tempo
+# ============================================================
+grafana:
+  adminPassword: admin
+  initChownData:
+    enabled: false
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://k8s-grafana-stack-prometheus-server
+          access: proxy
+          isDefault: true
+        - name: Loki
+          type: loki
+          uid: loki
+          url: http://k8s-grafana-stack-loki:3100
+          access: proxy
+        - name: Tempo
+          type: tempo
+          uid: tempo
+          url: http://k8s-grafana-stack-tempo:3200
+          access: proxy
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL  # Watch all namespaces for dashboard ConfigMaps
+  ingress:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  persistence:
+    enabled: true
+    size: 1Gi

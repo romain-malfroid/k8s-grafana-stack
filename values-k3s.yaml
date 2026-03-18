@@ -1,0 +1,32 @@
+# k8s-grafana-stack — k3s platform overrides
+# Usage: helm install k8s-grafana-stack . -f values.yaml -f values-k3s.yaml -n monitoring --create-namespace
+# For deployment-specific values (gateway name, domain), add a third -f with your own overrides file.
+
+# Enable Traefik HTTPRoute for Grafana (Gateway API)
+# Override gatewayName and gatewayNamespace with your actual Gateway resource name.
+traefik:
+  enabled: true
+  gatewayName: ""        # e.g. "my-gateway"
+  gatewayNamespace: ""   # e.g. "default"
+
+# k3s: Alloy clustering disabled (single node)
+k8s-monitoring:
+  alloy-metrics:
+    alloy:
+      clustering:
+        enabled: false
+  # node-exporter: k8s-monitoring → clusterMetrics → node-exporter (prometheus-node-exporter)
+  # hostNetwork/hostPID disabled to avoid port conflicts on k3s single-node
+  clusterMetrics:
+    node-exporter:
+      deploy: true
+      hostNetwork: false
+      hostPID: false
+
+# k3s: Grafana served under /grafana subpath via Traefik
+# Override root_url with your actual domain.
+grafana:
+  grafana.ini:
+    server:
+      root_url: "http://<your-domain>/grafana"
+      serve_from_sub_path: true

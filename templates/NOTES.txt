@@ -1,0 +1,16 @@
+k8s-grafana-stack has been installed!
+
+Access:
+  Grafana: http://localhost/grafana (or your configured ingress URL)
+  Default credentials: admin / admin
+
+Datasources pre-configured:
+  - Prometheus (default)
+  - Loki
+  - Tempo
+
+To check all pods are running:
+  kubectl get pods -n {{ .Release.Namespace }}
+
+To upgrade:
+  helm upgrade {{ .Release.Name }} . -f values.yaml -n {{ .Release.Namespace }}

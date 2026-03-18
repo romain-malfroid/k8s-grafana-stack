@@ -1,0 +1,3 @@
+charts/
+*.tgz
+values.local.yaml
