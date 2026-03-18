@@ -4,12 +4,7 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'Chart.yaml'
-      - 'Chart.lock'
-      - 'values.yaml'
-      - 'values-k3s.yaml'
-      - 'templates/**'
+  workflow_dispatch:
 
 permissions:
   contents: write
