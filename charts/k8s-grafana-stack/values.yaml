@@ -219,7 +219,41 @@ grafana:
   sidecar:
     dashboards:
       enabled: true
-      searchNamespace: ALL  # Watch all namespaces for dashboard ConfigMaps
+      searchNamespace: ALL
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: kubernetes
+          orgId: 1
+          folder: Kubernetes
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/kubernetes
+  dashboards:
+    kubernetes:
+      k8s-views-global:
+        gnetId: 15757
+        revision: 37
+        datasource: Prometheus
+      k8s-views-namespaces:
+        gnetId: 15758
+        revision: 35
+        datasource: Prometheus
+      k8s-views-nodes:
+        gnetId: 15759
+        revision: 29
+        datasource: Prometheus
+      k8s-views-pods:
+        gnetId: 15760
+        revision: 28
+        datasource: Prometheus
+      node-exporter-full:
+        gnetId: 1860
+        revision: 37
+        datasource: Prometheus
   ingress:
     enabled: false
   resources:
