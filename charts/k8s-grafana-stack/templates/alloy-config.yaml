@@ -18,14 +18,21 @@ data:
     }
 
     // ============================================================
-    // METRICS — node-exporter (one per node via discovery)
+    // METRICS — node-exporter (via pod discovery — works with hostNetwork: false)
     // ============================================================
-    discovery.kubernetes "nodes" {
-      role = "node"
+    discovery.kubernetes "node_exporter_pods" {
+      role = "pod"
+      namespaces {
+        names = [{{ .Release.Namespace | quote }}]
+      }
+      selectors {
+        role  = "pod"
+        label = "app.kubernetes.io/name=prometheus-node-exporter"
+      }
     }
 
     discovery.relabel "node_exporter" {
-      targets = discovery.kubernetes.nodes.targets
+      targets = discovery.kubernetes.node_exporter_pods.targets
       rule {
         source_labels = ["__address__"]
         regex         = "([^:]+).*"
@@ -33,7 +40,7 @@ data:
         target_label  = "__address__"
       }
       rule {
-        source_labels = ["__meta_kubernetes_node_name"]
+        source_labels = ["__meta_kubernetes_pod_node_name"]
         target_label  = "node"
       }
     }
@@ -48,6 +55,10 @@ data:
     // ============================================================
     // METRICS — cadvisor (container metrics via kubelet)
     // ============================================================
+    discovery.kubernetes "nodes" {
+      role = "node"
+    }
+
     discovery.relabel "cadvisor" {
       targets = discovery.kubernetes.nodes.targets
       rule {
