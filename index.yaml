@@ -2,6 +2,41 @@ apiVersion: v1
 entries:
   k8s-grafana-stack:
   - apiVersion: v2
+    created: "2026-03-19T10:15:43.602993824Z"
+    dependencies:
+    - name: alloy
+      repository: https://grafana.github.io/helm-charts
+      version: 1.6.2
+    - name: kube-state-metrics
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 7.2.1
+    - name: prometheus-node-exporter
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 4.52.1
+    - name: prometheus
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 28.13.0
+    - name: alertmanager
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 1.33.1
+    - name: loki
+      repository: https://grafana.github.io/helm-charts
+      version: 6.55.0
+    - name: tempo
+      repository: https://grafana.github.io/helm-charts
+      version: 1.24.4
+    - name: grafana
+      repository: https://grafana.github.io/helm-charts
+      version: 10.5.15
+    description: Complete Grafana observability stack — metrics, logs, traces collected
+      by Alloy
+    digest: d65c98f52b380df2ddd483383785631d93b5f13fbb07449f33cf7715eefaa432
+    name: k8s-grafana-stack
+    type: application
+    urls:
+    - https://github.com/romain-malfroid/k8s-grafana-stack/releases/download/k8s-grafana-stack-0.2.5/k8s-grafana-stack-0.2.5.tgz
+    version: 0.2.5
+  - apiVersion: v2
     created: "2026-03-19T10:04:56.111760611Z"
     dependencies:
     - name: alloy
@@ -321,4 +356,4 @@ entries:
     urls:
     - https://romain-malfroid.github.io/k8s-grafana-stack/k8s-grafana-stack-0.1.0.tgz
     version: 0.1.0
-generated: "2026-03-19T10:04:56.111790645Z"
+generated: "2026-03-19T10:15:43.603040912Z"
