@@ -125,60 +125,6 @@ data:
     }
 
     // ============================================================
-    // METRICS — annotated pods (Spring Boot, custom apps)
-    // Add these annotations to any pod to enable scraping:
-    //   prometheus.io/scrape: "true"
-    //   prometheus.io/path: "/actuator/prometheus"
-    //   prometheus.io/port: "8180"
-    // ============================================================
-    discovery.kubernetes "annotated_pods" {
-      role = "pod"
-    }
-
-    discovery.relabel "annotated_pods" {
-      targets = discovery.kubernetes.annotated_pods.targets
-
-      rule {
-        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
-        action        = "keep"
-        regex         = "true"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
-        action        = "replace"
-        target_label  = "__metrics_path__"
-        regex         = "(.+)"
-        replacement   = "$1"
-      }
-      rule {
-        source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
-        action        = "replace"
-        regex         = "([^:]+)(?::\\d+)?;(\\d+)"
-        replacement   = "$1:$2"
-        target_label  = "__address__"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_namespace"]
-        target_label  = "namespace"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_name"]
-        target_label  = "pod"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_label_app"]
-        target_label  = "app"
-      }
-    }
-
-    prometheus.scrape "annotated_pods" {
-      targets         = discovery.relabel.annotated_pods.output
-      forward_to      = [prometheus.remote_write.default.receiver]
-      job_name        = "kubernetes-pods"
-      scrape_interval = "30s"
-    }
-
-    // ============================================================
     // LOGS — pod logs via Kubernetes API
     // ============================================================
     discovery.kubernetes "pods" {
@@ -258,3 +204,10 @@ data:
         }
       }
     }
+    {{- if .Values.extraAlloyConfig }}
+
+    // ============================================================
+    // EXTRA CONFIG (user-defined)
+    // ============================================================
+    {{ .Values.extraAlloyConfig | nindent 4 }}
+    {{- end }}

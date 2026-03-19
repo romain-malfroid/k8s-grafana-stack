@@ -5,6 +5,10 @@
 # Name added as "cluster" label on all metrics (used by dashboards)
 clusterName: "local"
 
+# Extra Alloy config appended to the generated config — for custom scrape jobs, etc.
+# See: https://grafana.com/docs/alloy/latest/reference/components/
+extraAlloyConfig: ""
+
 # ============================================================
 # TRAEFIK GATEWAY (disabled by default — enable in platform values)
 # ============================================================
