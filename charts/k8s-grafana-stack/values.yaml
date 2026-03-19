@@ -11,69 +11,41 @@ traefik:
   gatewayNamespace: ""
 
 # ============================================================
-# COLLECTION — Alloy via k8s-monitoring (Grafana Labs)
-# Replaces: node-exporter, kube-state-metrics, Promtail
+# COLLECTION — Alloy (metrics + logs + traces)
 # ============================================================
-k8s-monitoring:
-  cluster:
-    name: "local"
-
-  destinations:
-    - name: prometheus
-      type: prometheus
-      url: http://k8s-grafana-stack-prometheus-server/api/v1/write
-    - name: loki
-      type: loki
-      url: http://k8s-grafana-stack-loki:3100/loki/api/v1/push
-    - name: tempo
-      type: otlp
-      url: http://k8s-grafana-stack-tempo:4317
-      protocol: grpc
-
-  # Kubernetes cluster metrics
-  clusterMetrics:
-    enabled: true
-    destinations: [prometheus]
-    # Add metrics needed by k8s dashboards — filtered out by default allow-list
-    cadvisor:
-      metricsTuning:
-        includeMetrics:
-          - machine_cpu_cores
-    kube-state-metrics:
-      metricsTuning:
-        includeMetrics:
-          - kube_namespace_labels
-    # Disable optional features not needed for basic observability
-    opencost:
-      enabled: false
-    kepler:
-      enabled: false
-
-  # Kubernetes events as logs
-  clusterEvents:
-    enabled: true
-    destinations: [loki]
-
-  # Pod logs collection
-  podLogs:
-    enabled: true
-    destinations: [loki]
-
-  alloy-metrics:
-    enabled: true
-  alloy-logs:
-    enabled: true
-  alloy-singleton:
-    enabled: true
-  alloy-receiver:
-    enabled: false
+alloy:
+  alloy:
+    configMap:
+      create: false
+      name: "k8s-grafana-stack-alloy-config"  # Must match release name + "-alloy-config"
+      key: config.alloy
+    controller:
+      type: statefulset
+  serviceAccount:
+    create: true
+  rbac:
+    create: false     # Managed by our alloy-rbac.yaml template
 
 # ============================================================
-# METRICS — Prometheus + Alertmanager (prometheus-community)
+# EXPORTERS — scraped by Alloy
+# ============================================================
+kube-state-metrics:
+  # All metrics exposed — no allow-list filtering
+  metricLabelsAllowlist:
+    - namespaces=[*]
+    - pods=[*]
+    - nodes=[*]
+
+prometheus-node-exporter:
+  tolerations:
+    - operator: Exists
+      effect: NoSchedule
+
+# ============================================================
+# METRICS — Prometheus + Alertmanager
 # ============================================================
 prometheus:
   server:
-    # Accept metrics pushed by Alloy
     extraFlags:
       - web.enable-remote-write-receiver
       - web.enable-lifecycle
@@ -88,31 +60,12 @@ prometheus:
     persistentVolume:
       enabled: true
       size: 5Gi
-
-  # Disable Kubernetes scrape jobs that duplicate Alloy collection
-  scrapeConfigs:
-    kubernetes-nodes:
-      enabled: false
-    kubernetes-nodes-cadvisor:
-      enabled: false
-    kubernetes-pods:
-      enabled: false
-    kubernetes-service-endpoints:
-      enabled: false
-    kubernetes-service-endpoints-slow:
-      enabled: false
-    kubernetes-services:
-      enabled: false
-    kubernetes-pods-slow:
-      enabled: false
-
-  # Disable built-in scrapers — Alloy handles collection
   alertmanager:
-    enabled: false  # managed separately
+    enabled: false
   prometheus-node-exporter:
-    enabled: false  # managed by k8s-monitoring
+    enabled: false
   kube-state-metrics:
-    enabled: false  # managed by k8s-monitoring
+    enabled: false
 
 alertmanager:
   resources:
@@ -127,7 +80,7 @@ alertmanager:
     size: 1Gi
 
 # ============================================================
-# LOGS — Loki (Grafana Labs)
+# LOGS — Loki
 # ============================================================
 loki:
   loki:
@@ -170,7 +123,7 @@ loki:
     replicas: 0
 
 # ============================================================
-# TRACES — Tempo (Grafana Labs)
+# TRACES — Tempo
 # ============================================================
 tempo:
   tempo:
@@ -193,8 +146,7 @@ tempo:
         enabled: true
 
 # ============================================================
-# VISUALIZATION — Grafana (Grafana Labs)
-# Independent — connects to Prometheus, Loki and Tempo
+# VISUALIZATION — Grafana
 # ============================================================
 grafana:
   adminPassword: admin

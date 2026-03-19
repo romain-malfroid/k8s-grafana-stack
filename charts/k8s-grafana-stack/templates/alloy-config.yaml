@@ -1,0 +1,164 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-alloy-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.alloy: |
+    // ============================================================
+    // METRICS — kube-state-metrics
+    // ============================================================
+    prometheus.scrape "kube_state_metrics" {
+      targets = [{
+        __address__ = "{{ .Release.Name }}-kube-state-metrics:8080",
+      }]
+      forward_to    = [prometheus.remote_write.default.receiver]
+      job_name      = "kube-state-metrics"
+      scrape_interval = "60s"
+    }
+
+    // ============================================================
+    // METRICS — node-exporter (one per node via discovery)
+    // ============================================================
+    discovery.kubernetes "nodes" {
+      role = "node"
+    }
+
+    discovery.relabel "node_exporter" {
+      targets = discovery.kubernetes.nodes.targets
+      rule {
+        source_labels = ["__address__"]
+        regex         = "([^:]+).*"
+        replacement   = "${1}:9100"
+        target_label  = "__address__"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_node_name"]
+        target_label  = "node"
+      }
+    }
+
+    prometheus.scrape "node_exporter" {
+      targets         = discovery.relabel.node_exporter.output
+      forward_to      = [prometheus.remote_write.default.receiver]
+      job_name        = "node-exporter"
+      scrape_interval = "60s"
+    }
+
+    // ============================================================
+    // METRICS — cadvisor (container metrics via kubelet)
+    // ============================================================
+    discovery.relabel "cadvisor" {
+      targets = discovery.kubernetes.nodes.targets
+      rule {
+        target_label = "__metrics_path__"
+        replacement  = "/metrics/cadvisor"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_node_name"]
+        target_label  = "node"
+      }
+    }
+
+    prometheus.scrape "cadvisor" {
+      targets         = discovery.relabel.cadvisor.output
+      forward_to      = [prometheus.remote_write.default.receiver]
+      job_name        = "cadvisor"
+      scheme          = "https"
+      scrape_interval = "60s"
+      tls_config {
+        ca_file              = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+        insecure_skip_verify = true
+      }
+      bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    }
+
+    // ============================================================
+    // METRICS — remote write to Prometheus
+    // ============================================================
+    prometheus.remote_write "default" {
+      endpoint {
+        url = "http://{{ .Release.Name }}-prometheus-server/api/v1/write"
+      }
+    }
+
+    // ============================================================
+    // LOGS — pod logs via Kubernetes API
+    // ============================================================
+    discovery.kubernetes "pods" {
+      role = "pod"
+    }
+
+    discovery.relabel "pod_logs" {
+      targets = discovery.kubernetes.pods.targets
+      rule {
+        source_labels = ["__meta_kubernetes_pod_phase"]
+        action        = "keep"
+        regex         = "Running"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+        target_label  = "app"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name"]
+        separator     = "/"
+        target_label  = "job"
+      }
+    }
+
+    loki.source.kubernetes "pod_logs" {
+      targets    = discovery.relabel.pod_logs.output
+      forward_to = [loki.write.default.receiver]
+    }
+
+    // ============================================================
+    // LOGS — Kubernetes cluster events
+    // ============================================================
+    loki.source.kubernetes_events "cluster_events" {
+      job_name   = "cluster-events"
+      log_format = "logfmt"
+      forward_to = [loki.write.default.receiver]
+    }
+
+    loki.write "default" {
+      endpoint {
+        url = "http://{{ .Release.Name }}-loki:3100/loki/api/v1/push"
+      }
+    }
+
+    // ============================================================
+    // TRACES — OTLP receiver → Tempo
+    // ============================================================
+    otelcol.receiver.otlp "default" {
+      grpc {
+        endpoint = "0.0.0.0:4317"
+      }
+      http {
+        endpoint = "0.0.0.0:4318"
+      }
+      output {
+        traces = [otelcol.exporter.otlp.tempo.input]
+      }
+    }
+
+    otelcol.exporter.otlp "tempo" {
+      client {
+        endpoint = "{{ .Release.Name }}-tempo:4317"
+        tls {
+          insecure = true
+        }
+      }
+    }

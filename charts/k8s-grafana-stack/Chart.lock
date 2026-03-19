@@ -1,7 +1,13 @@
 dependencies:
-- name: k8s-monitoring
+- name: alloy
   repository: https://grafana.github.io/helm-charts
-  version: 3.8.4
+  version: 1.6.2
+- name: kube-state-metrics
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 7.2.1
+- name: prometheus-node-exporter
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 4.52.1
 - name: prometheus
   repository: https://prometheus-community.github.io/helm-charts
   version: 28.13.0
@@ -17,5 +23,5 @@ dependencies:
 - name: grafana
   repository: https://grafana.github.io/helm-charts
   version: 10.5.15
-digest: sha256:b1bea427877b2049b587dd15464c64894a533a08beda514fb5b5a5a7c95eeb26
-generated: "2026-03-18T12:15:58.3205758+01:00"
+digest: sha256:3def7564d3628ca1c54fbdb7c5d10f2d2f7e91f2a45f949ed5379d794c31f7ed
+generated: "2026-03-19T10:10:39.3495772+01:00"
