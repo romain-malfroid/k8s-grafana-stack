@@ -63,8 +63,11 @@ prometheus:
     persistentVolume:
       enabled: true
       size: 5Gi
-  # Disable all kubernetes scrape jobs — Alloy handles collection via remote_write
+  # Disable all scrape jobs — Alloy handles collection via remote_write
+  # Only prometheus self-scrape remains (job="prometheus")
   scrapeConfigs:
+    kubernetes-apiservers:
+      enabled: false
     kubernetes-nodes:
       enabled: false
     kubernetes-nodes-cadvisor:
@@ -78,6 +81,8 @@ prometheus:
     kubernetes-services:
       enabled: false
     kubernetes-pods-slow:
+      enabled: false
+    prometheus-pushgateway:
       enabled: false
   alertmanager:
     enabled: false
