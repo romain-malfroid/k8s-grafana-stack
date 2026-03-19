@@ -14,7 +14,7 @@ data:
       }]
       forward_to    = [prometheus.remote_write.default.receiver]
       job_name      = "kube-state-metrics"
-      scrape_interval = "60s"
+      scrape_interval = "30s"
     }
 
     // ============================================================
@@ -49,7 +49,7 @@ data:
       targets         = discovery.relabel.node_exporter.output
       forward_to      = [prometheus.remote_write.default.receiver]
       job_name        = "node-exporter"
-      scrape_interval = "60s"
+      scrape_interval = "30s"
     }
 
     // ============================================================
@@ -76,7 +76,7 @@ data:
       forward_to        = [prometheus.remote_write.default.receiver]
       job_name          = "kubelet"
       scheme            = "https"
-      scrape_interval   = "60s"
+      scrape_interval   = "30s"
       tls_config {
         ca_file              = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
         insecure_skip_verify = true
@@ -104,7 +104,7 @@ data:
       forward_to      = [prometheus.remote_write.default.receiver]
       job_name        = "cadvisor"
       scheme          = "https"
-      scrape_interval = "60s"
+      scrape_interval = "30s"
       tls_config {
         ca_file              = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
         insecure_skip_verify = true
