@@ -2,6 +2,9 @@
 # Works on any Kubernetes distribution (k3s, EKS, GKE, vanilla k8s...)
 # For platform-specific overrides, use values-k3s.yaml
 
+# Name added as "cluster" label on all metrics (used by dashboards)
+clusterName: "local"
+
 # ============================================================
 # TRAEFIK GATEWAY (disabled by default — enable in platform values)
 # ============================================================

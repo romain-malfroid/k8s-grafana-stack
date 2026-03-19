@@ -80,6 +80,9 @@ data:
       endpoint {
         url = "http://{{ .Release.Name }}-prometheus-server/api/v1/write"
       }
+      external_labels = {
+        cluster = {{ .Values.clusterName | quote }},
+      }
     }
 
     // ============================================================
