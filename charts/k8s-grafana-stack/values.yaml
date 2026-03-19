@@ -34,11 +34,15 @@ k8s-monitoring:
   clusterMetrics:
     enabled: true
     destinations: [prometheus]
-    # Add machine_cpu_cores (needed by k8s dashboards) — filtered out by default allow-list
+    # Add metrics needed by k8s dashboards — filtered out by default allow-list
     cadvisor:
       metricsTuning:
         includeMetrics:
           - machine_cpu_cores
+    kube-state-metrics:
+      metricsTuning:
+        includeMetrics:
+          - kube_namespace_labels
     # Disable optional features not needed for basic observability
     opencost:
       enabled: false
