@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   config.alloy: |
+    {{- if .Values.prometheus.enabled }}
     // ============================================================
     // METRICS — kube-state-metrics
     // ============================================================
@@ -172,7 +173,9 @@ data:
         cluster = {{ .Values.clusterName | quote }},
       }
     }
+    {{- end }}
 
+    {{- if .Values.loki.enabled }}
     // ============================================================
     // LOGS — pod logs via Kubernetes API
     // ============================================================
@@ -241,7 +244,9 @@ data:
         url = "http://{{ .Release.Name }}-loki:3100/loki/api/v1/push"
       }
     }
+    {{- end }}
 
+    {{- if .Values.tempo.enabled }}
     // ============================================================
     // TRACES — OTLP receiver → Tempo
     // ============================================================
@@ -265,6 +270,8 @@ data:
         }
       }
     }
+    {{- end }}
+
     {{- if .Values.extraAlloyConfig }}
 
     // ============================================================

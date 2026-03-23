@@ -1,34 +1,18 @@
 # k8s-grafana-stack — default values
 # Works on any Kubernetes distribution (k3s, EKS, GKE, vanilla k8s...)
+#
+# Quick overrides:
+#   Expose Grafana via ingress ............. see grafana: section → ingress
+#   k3s fix (node-exporter conflicts) ...... see prometheus-node-exporter: section
+#
+# Enable / disable components (set enabled: false in the relevant section below):
+#   prometheus.enabled: false → metrics off (Prometheus, node-exporter, kube-state-metrics, Alertmanager)
+#   loki.enabled: false       → logs off
+#   tempo.enabled: false      → traces off
 
 # Name added as "cluster" label on all metrics (used by dashboards)
 clusterName: "local"
 
-# ============================================================
-# INGRESS — expose Grafana (any Kubernetes distribution)
-# ============================================================
-# grafana:
-#   ingress:
-#     enabled: true
-#     ingressClassName: nginx     # or traefik, or any other ingress controller
-#     hosts:
-#       - your-domain
-#     path: /grafana
-#   grafana.ini:
-#     server:
-#       root_url: "http://your-domain/grafana"
-#       serve_from_sub_path: true
-
-# ============================================================
-# K3S OVERRIDES (uncomment if running on k3s)
-# ============================================================
-
-# Required on k3s: hostNetwork and hostPID cause port conflicts with k3s internal
-# processes. Disabling them is the recommended approach for k3s and trades a small
-# number of low-level host metrics for a working deployment.
-# prometheus-node-exporter:
-#   hostNetwork: false
-#   hostPID: false
 
 # ============================================================
 # EXTRA ALLOY CONFIG — custom scrape jobs, etc.
@@ -81,11 +65,16 @@ prometheus-node-exporter:
   tolerations:
     - operator: Exists
       effect: NoSchedule
+  # K3S: uncomment the two lines below to avoid port conflicts with k3s internal processes.
+  # Disabling hostNetwork/hostPID trades a small number of low-level host metrics for a working deployment.
+  # hostNetwork: false
+  # hostPID: false
 
 # ============================================================
 # METRICS — Prometheus + Alertmanager
 # ============================================================
 prometheus:
+  enabled: true
   server:
     extraFlags:
       - web.enable-remote-write-receiver
@@ -147,6 +136,7 @@ alertmanager:
 # LOGS — Loki
 # ============================================================
 loki:
+  enabled: true
   loki:
     auth_enabled: false
     commonConfig:
@@ -190,6 +180,7 @@ loki:
 # TRACES — Tempo
 # ============================================================
 tempo:
+  enabled: true
   tempo:
     resources:
       requests:
@@ -270,6 +261,17 @@ grafana:
         gnetId: 15760
         revision: 28
         datasource: Prometheus
+  # Ingress — uncomment and fill in to expose Grafana via your ingress controller
+  # ingress:
+  #   enabled: true
+  #   ingressClassName: nginx     # or traefik, or any other ingress controller
+  #   hosts:
+  #     - your-domain
+  #   path: /grafana
+  # grafana.ini:
+  #   server:
+  #     root_url: "http://your-domain/grafana"
+  #     serve_from_sub_path: true
   ingress:
     enabled: false
   resources:

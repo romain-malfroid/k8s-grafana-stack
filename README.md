@@ -85,15 +85,35 @@ helm upgrade k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack \
   [-f values.yaml] -n monitoring
 ```
 
----
-
 ## Architecture
 
 ![Architecture](docs/Alloy.svg)
 
----
-
 ## Configuration
+
+### Enable / disable components
+
+By default all components are enabled. Set `enabled: false` to disable a component — this removes both the storage layer and the corresponding Alloy collection pipeline:
+
+```yaml
+prometheus:
+  enabled: false  # disables metrics (Prometheus, node-exporter, kube-state-metrics, Alertmanager)
+
+loki:
+  enabled: false  # disables log storage and collection
+
+tempo:
+  enabled: false  # disables trace storage and collection
+```
+
+Common combinations:
+
+| Use case | Config |
+|----------|--------|
+| Full stack (default) | all enabled |
+| Metrics only | `loki.enabled: false` + `tempo.enabled: false` |
+| Metrics + logs | `tempo.enabled: false` |
+| Logs only | `prometheus.enabled: false` + `tempo.enabled: false` |
 
 ### Common overrides
 

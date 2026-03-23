@@ -14,29 +14,35 @@ dependencies:
   - name: kube-state-metrics
     version: "7.2.1"
     repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
 
   - name: prometheus-node-exporter
     version: "4.52.1"
     repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
 
   # Metrics storage + alerting
   - name: prometheus
     version: "28.13.0"
     repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
 
   - name: alertmanager
     version: "1.33.1"
     repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
 
   # Log storage
   - name: loki
     version: "6.55.0"
     repository: https://grafana.github.io/helm-charts
+    condition: loki.enabled
 
   # Trace storage
   - name: tempo
     version: "1.24.4"
     repository: https://grafana.github.io/helm-charts
+    condition: tempo.enabled
 
   # Visualization
   - name: grafana
