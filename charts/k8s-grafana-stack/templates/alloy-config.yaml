@@ -113,6 +113,55 @@ data:
     }
 
     // ============================================================
+    // METRICS — annotation-based pod scraping (prometheus.io/scrape: "true")
+    // ============================================================
+    discovery.kubernetes "annotated_pods" {
+      role = "pod"
+    }
+
+    discovery.relabel "annotated_pods" {
+      targets = discovery.kubernetes.annotated_pods.targets
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+        action        = "keep"
+        regex         = "true"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+        action        = "replace"
+        target_label  = "__metrics_path__"
+        regex         = "(.+)"
+        replacement   = "${1}"
+      }
+      rule {
+        source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+        action        = "replace"
+        regex         = "([^:]+)(?:\\d+)?;(\\d+)"
+        replacement   = "${1}:${2}"
+        target_label  = "__address__"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+        target_label  = "app"
+      }
+    }
+
+    prometheus.scrape "annotated_pods" {
+      targets         = discovery.relabel.annotated_pods.output
+      forward_to      = [prometheus.remote_write.default.receiver]
+      job_name        = "kubernetes-pods"
+      scrape_interval = "30s"
+    }
+
+    // ============================================================
     // METRICS — remote write to Prometheus
     // ============================================================
     prometheus.remote_write "default" {
@@ -161,10 +210,22 @@ data:
       }
     }
 
+    {{- if .Values.logsProcessStages }}
+    loki.source.kubernetes "pod_logs" {
+      targets    = discovery.relabel.pod_logs.output
+      forward_to = [loki.process.pod_logs_pipeline.receiver]
+    }
+
+    loki.process "pod_logs_pipeline" {
+      {{ .Values.logsProcessStages | nindent 6 }}
+      forward_to = [loki.write.default.receiver]
+    }
+    {{- else }}
     loki.source.kubernetes "pod_logs" {
       targets    = discovery.relabel.pod_logs.output
       forward_to = [loki.write.default.receiver]
     }
+    {{- end }}
 
     // ============================================================
     // LOGS — Kubernetes cluster events

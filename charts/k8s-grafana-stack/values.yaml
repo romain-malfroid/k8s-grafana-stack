@@ -1,21 +1,55 @@
-# k8s-grafana-stack — Common values
+# k8s-grafana-stack — default values
 # Works on any Kubernetes distribution (k3s, EKS, GKE, vanilla k8s...)
-# For platform-specific overrides, use values-k3s.yaml
 
 # Name added as "cluster" label on all metrics (used by dashboards)
 clusterName: "local"
+
+# ============================================================
+# INGRESS — expose Grafana (any Kubernetes distribution)
+# ============================================================
+# grafana:
+#   ingress:
+#     enabled: true
+#     ingressClassName: nginx     # or traefik, or any other ingress controller
+#     hosts:
+#       - your-domain
+#     path: /grafana
+#   grafana.ini:
+#     server:
+#       root_url: "http://your-domain/grafana"
+#       serve_from_sub_path: true
+
+# ============================================================
+# K3S OVERRIDES (uncomment if running on k3s)
+# ============================================================
+
+# Required on k3s: hostNetwork and hostPID cause port conflicts with k3s internal
+# processes. Disabling them is the recommended approach for k3s and trades a small
+# number of low-level host metrics for a working deployment.
+# prometheus-node-exporter:
+#   hostNetwork: false
+#   hostPID: false
+
+# ============================================================
+# EXTRA ALLOY CONFIG — custom scrape jobs, etc.
+# ============================================================
 
 # Extra Alloy config appended to the generated config — for custom scrape jobs, etc.
 # See: https://grafana.com/docs/alloy/latest/reference/components/
 extraAlloyConfig: ""
 
-# ============================================================
-# TRAEFIK GATEWAY (disabled by default — enable in platform values)
-# ============================================================
-traefik:
-  enabled: false
-  gatewayName: ""
-  gatewayNamespace: ""
+# Optional Alloy pipeline stages injected between log collection and Loki write.
+# Allows adding stage.regex, stage.labels, stage.json, etc. without creating
+# a separate log source (no duplicate logs).
+# Example — extract log level from any log format:
+#   logsProcessStages: |
+#     stage.regex {
+#       expression = `(?i)\b(?P<level>TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\b`
+#     }
+#     stage.labels {
+#       values = { level = "level" }
+#     }
+logsProcessStages: ""
 
 # ============================================================
 # COLLECTION — Alloy (metrics + logs + traces)
@@ -24,14 +58,14 @@ alloy:
   alloy:
     configMap:
       create: false
-      name: "k8s-grafana-stack-alloy-config"  # Must match release name + "-alloy-config"
+      name: "k8s-grafana-stack-alloy-config" # Must match release name + "-alloy-config"
       key: config.alloy
     controller:
       type: statefulset
   serviceAccount:
     create: true
   rbac:
-    create: false     # Managed by our alloy-rbac.yaml template
+    create: false # Managed by our alloy-rbac.yaml template
 
 # ============================================================
 # EXPORTERS — scraped by Alloy
@@ -235,10 +269,6 @@ grafana:
       k8s-views-pods:
         gnetId: 15760
         revision: 28
-        datasource: Prometheus
-      node-exporter-full:
-        gnetId: 1860
-        revision: 37
         datasource: Prometheus
   ingress:
     enabled: false
