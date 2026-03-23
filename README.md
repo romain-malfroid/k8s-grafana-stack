@@ -16,24 +16,16 @@ No configuration needed. The chart works out of the box with sensible defaults:
 
 It is recommended to install the chart in a dedicated `monitoring` namespace.
 
-**1. Add the Helm repository:**
+The chart is distributed as an OCI artifact via GitHub Container Registry — no `helm repo add` needed.
+
+**1. Install the chart:**
 
 ```bash
-helm repo add k8s-grafana-stack https://romain-malfroid.github.io/k8s-grafana-stack
-```
-
-**2. Update your local chart index:**
-
-```bash
-helm repo update
-```
-
-**3. Install the chart:**
-
-```bash
-helm install k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack \
+helm install k8s-grafana-stack oci://ghcr.io/romain-malfroid/helm-charts/k8s-grafana-stack \
   -n monitoring --create-namespace
 ```
+
+Pin a specific version with `--version 0.2.12`.
 
 Access Grafana at http://localhost:3000 (admin / admin):
 
@@ -62,7 +54,7 @@ grafana:
 ```
 
 ```bash
-helm install k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack \
+helm install k8s-grafana-stack oci://ghcr.io/romain-malfroid/helm-charts/k8s-grafana-stack \
   -f values.yaml -n monitoring --create-namespace
 ```
 
@@ -81,7 +73,7 @@ prometheus-node-exporter:
 ### Upgrade
 
 ```bash
-helm upgrade k8s-grafana-stack k8s-grafana-stack/k8s-grafana-stack \
+helm upgrade k8s-grafana-stack oci://ghcr.io/romain-malfroid/helm-charts/k8s-grafana-stack \
   [-f values.yaml] -n monitoring
 ```
 
