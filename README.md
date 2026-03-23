@@ -129,6 +129,26 @@ metadata:
     prometheus.io/path: "/metrics" # optional, defaults to /metrics
 ```
 
+### Kubernetes naming conventions for scraping
+
+For scraping to work properly and ensure consistency across metrics, logs and traces, your applications **must follow the official Kubernetes labeling conventions (in English)**.
+
+| Label                          | Example              | Description              |
+|--------------------------------|----------------------|--------------------------|
+| `app.kubernetes.io/name`       | `api-gateway`        | Application name         |
+| `app.kubernetes.io/instance`   | `api-gateway-prod`   | Unique instance          |
+| `app.kubernetes.io/version`    | `1.2.3`              | Version                  |
+| `app.kubernetes.io/component`  | `backend`            | Component role           |
+| `app.kubernetes.io/part-of`    | `my-app`             | Parent application       |
+| `app.kubernetes.io/managed-by` | `helm`               | Management tool          |
+
+These labels are used by the observability stack to:
+- properly identify applications
+- group metrics, logs and traces
+- improve dashboards and filtering in Grafana
+
+> ⚠️ Non-standard or inconsistent labels may result in incomplete or poorly grouped data.
+
 ### Advanced Alloy configuration
 
 Alloy uses its own configuration language (River) to define pipelines. Two extension points are available without touching the chart internals:
