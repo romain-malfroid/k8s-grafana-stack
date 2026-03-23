@@ -44,6 +44,13 @@ data:
         source_labels = ["__meta_kubernetes_pod_node_name"]
         target_label  = "node"
       }
+      // Set instance = node hostname so community dashboards (k8s-views-nodes etc.)
+      // can match via instance="$instance" — without this, instance defaults to
+      // the pod IP:9100 which does not match the dashboard's $instance variable.
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "instance"
+      }
     }
 
     prometheus.scrape "node_exporter" {
