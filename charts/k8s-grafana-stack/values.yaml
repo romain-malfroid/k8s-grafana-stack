@@ -137,6 +137,10 @@ alertmanager:
 # ============================================================
 loki:
   enabled: true
+  lokiCanary:
+    extraArgs:
+      - -labelname=service_name
+      - -labelvalue=loki-canary
   loki:
     auth_enabled: false
     commonConfig:

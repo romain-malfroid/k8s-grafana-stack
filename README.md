@@ -168,7 +168,7 @@ extraAlloyConfig: |
 ```yaml
 logsProcessStages: |
   stage.regex {
-    expression = `(?i)\b(?P<level>TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\b`
+    expression = `(?i)\b(?P<level>TRACE|DEBUG|INFO|WARN|ERROR|FATAL)(?:ING)?\b`
   }
   stage.labels {
     values = { level = "level" }
