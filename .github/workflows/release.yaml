@@ -33,7 +33,9 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Package chart
-        run: helm package charts/k8s-grafana-stack
+        run: |
+          cp README.md charts/k8s-grafana-stack/README.md
+          helm package charts/k8s-grafana-stack
 
       - name: Push chart
         run: helm push k8s-grafana-stack-*.tgz oci://ghcr.io/${{ github.repository_owner }}/helm-charts
