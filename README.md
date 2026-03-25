@@ -1,31 +1,31 @@
-# k8s-grafana-stack
+# 📊 k8s-grafana-stack
 
-Helm umbrella chart for a complete Kubernetes observability stack: metrics, logs and traces, collected by Alloy and visualized in Grafana.
+> Helm chart for a complete Kubernetes observability stack — metrics, logs and traces, collected by Alloy and visualized in Grafana.
+
+![Architecture](docs/Alloy.png)
 
 ---
 
-## Install
+## ✨ What's included
 
-### Any Kubernetes distribution
+- 🔍 **Auto-discovery** — Alloy scrapes cluster metrics and pod logs automatically
+- 📦 **Pre-configured datasources** — Prometheus, Loki and Tempo ready to use in Grafana
+- 📈 **Pre-installed dashboards** — Kubernetes views for nodes, pods, namespaces and cluster
+- 🎛️ **Modular** — disable metrics, logs or traces independently
 
-No configuration needed. The chart works out of the box with sensible defaults:
-- Alloy scrapes cluster metrics and pod logs automatically
-- Prometheus, Loki and Tempo are pre-configured as Grafana datasources
-- Kubernetes dashboards are pre-installed in Grafana
-- Grafana is accessible via `kubectl port-forward`
+---
 
-It is recommended to install the chart in a dedicated `monitoring` namespace.
+## 🚀 Install
 
 The chart is distributed as an OCI artifact via GitHub Container Registry — no `helm repo add` needed.
-
-**1. Install the chart:**
+It is recommended to install in a dedicated `monitoring` namespace.
 
 ```bash
 helm install k8s-grafana-stack oci://ghcr.io/romain-malfroid/helm-charts/k8s-grafana-stack \
   -n monitoring --create-namespace
 ```
 
-Pin a specific version with `--version 0.2.12`.
+Pin a specific version with `--version 0.2.18`.
 
 Access Grafana at http://localhost:3000 (admin / admin):
 
@@ -33,11 +33,11 @@ Access Grafana at http://localhost:3000 (admin / admin):
 kubectl port-forward svc/k8s-grafana-stack-grafana 3000:80 -n monitoring
 ```
 
-### With ingress
+### 🌐 With ingress
 
-To expose Grafana via your ingress controller, add the following to a `values.yaml`. A commented example is available in [`charts/k8s-grafana-stack/values.yaml`](charts/k8s-grafana-stack/values.yaml).
+To expose Grafana via your ingress controller. A commented example is available in [`charts/k8s-grafana-stack/values.yaml`](charts/k8s-grafana-stack/values.yaml).
 
-This approach works with any ingress controller (nginx, Traefik, etc.) including those that also implement the Gateway API — modern controllers like Traefik v3 support both APIs simultaneously.
+Works with any ingress controller (nginx, Traefik, etc.) including Gateway API implementations.
 
 ```yaml
 grafana:
@@ -58,9 +58,9 @@ helm install k8s-grafana-stack oci://ghcr.io/romain-malfroid/helm-charts/k8s-gra
   -f values.yaml -n monitoring --create-namespace
 ```
 
-### k3s
+### 🔧 k3s
 
-k3s requires two additional lines in your `values.yaml`. These are already commented in [`charts/k8s-grafana-stack/values.yaml`](charts/k8s-grafana-stack/values.yaml), just uncomment them:
+Uncomment two lines in your `values.yaml` to avoid port conflicts with k3s internal processes:
 
 ```yaml
 prometheus-node-exporter:
@@ -68,22 +68,20 @@ prometheus-node-exporter:
   hostPID: false
 ```
 
-> This disables host network and PID namespace sharing on node-exporter to avoid port conflicts with k3s internal processes. A small number of low-level host metrics will be unavailable, but this is the recommended approach for k3s and the chart remains fully functional.
+> ⚠️ This trades a small number of low-level host metrics for a working deployment — recommended approach for k3s.
 
-### Upgrade
+### ⬆️ Upgrade
 
 ```bash
 helm upgrade k8s-grafana-stack oci://ghcr.io/romain-malfroid/helm-charts/k8s-grafana-stack \
   [-f values.yaml] -n monitoring
 ```
 
-## Architecture
+---
 
-![Architecture](docs/Alloy.svg)
+## ⚙️ Configuration
 
-## Configuration
-
-### Enable / disable components
+### 🔌 Enable / disable components
 
 By default all components are enabled. Set `enabled: false` to disable a component — this removes both the storage layer and the corresponding Alloy collection pipeline:
 
@@ -98,8 +96,6 @@ tempo:
   enabled: false  # disables trace storage and collection
 ```
 
-Common combinations:
-
 | Use case | Config |
 |----------|--------|
 | Full stack (default) | all enabled |
@@ -107,7 +103,7 @@ Common combinations:
 | Metrics + logs | `tempo.enabled: false` |
 | Logs only | `prometheus.enabled: false` + `tempo.enabled: false` |
 
-### Common overrides
+### 🛠️ Common overrides
 
 | Key | Description | Default |
 |-----|-------------|---------|
@@ -116,9 +112,9 @@ Common combinations:
 | `prometheus.server.retention` | Metrics retention period | `7d` |
 | `tempo.tempo.retention` | Traces retention period | `24h` |
 
-### Scrape your app metrics
+### 📡 Scrape your app metrics
 
-If your application exposes a `/metrics` endpoint (Prometheus format), add these annotations to your pod template and Alloy will scrape it automatically — no extra configuration needed:
+Add these annotations to your pod template and Alloy will scrape it automatically:
 
 ```yaml
 # In your Deployment / StatefulSet, under spec.template.metadata
@@ -129,31 +125,24 @@ metadata:
     prometheus.io/path: "/metrics" # optional, defaults to /metrics
 ```
 
-### Kubernetes naming conventions for scraping
+### 🏷️ Kubernetes labeling conventions
 
-For scraping to work properly and ensure consistency across metrics, logs and traces, your applications **must follow the official Kubernetes labeling conventions (in English)**.
+For proper grouping across metrics, logs and traces, follow the official Kubernetes labeling conventions:
 
-| Label                          | Example              | Description              |
-|--------------------------------|----------------------|--------------------------|
-| `app.kubernetes.io/name`       | `api-gateway`        | Application name         |
-| `app.kubernetes.io/instance`   | `api-gateway-prod`   | Unique instance          |
-| `app.kubernetes.io/version`    | `1.2.3`              | Version                  |
-| `app.kubernetes.io/component`  | `backend`            | Component role           |
-| `app.kubernetes.io/part-of`    | `my-app`             | Parent application       |
-| `app.kubernetes.io/managed-by` | `helm`               | Management tool          |
+| Label | Example | Description |
+|-------|---------|-------------|
+| `app.kubernetes.io/name` | `api-gateway` | Application name |
+| `app.kubernetes.io/instance` | `api-gateway-prod` | Unique instance |
+| `app.kubernetes.io/version` | `1.2.3` | Version |
+| `app.kubernetes.io/component` | `backend` | Component role |
+| `app.kubernetes.io/part-of` | `my-app` | Parent application |
+| `app.kubernetes.io/managed-by` | `helm` | Management tool |
 
-These labels are used by the observability stack to:
-- properly identify applications
-- group metrics, logs and traces
-- improve dashboards and filtering in Grafana
+> ⚠️ Non-standard labels may result in incomplete or poorly grouped data in Grafana.
 
-> ⚠️ Non-standard or inconsistent labels may result in incomplete or poorly grouped data.
+### 🧩 Advanced Alloy configuration
 
-### Advanced Alloy configuration
-
-Alloy uses its own configuration language (River) to define pipelines. Two extension points are available without touching the chart internals:
-
-**`extraAlloyConfig`** — appends raw Alloy config blocks at the end of the generated config. Use this to add a custom scrape job for an endpoint not covered by the annotation-based discovery:
+**`extraAlloyConfig`** — append custom Alloy config blocks (custom scrape jobs, etc.):
 
 ```yaml
 extraAlloyConfig: |
@@ -163,7 +152,7 @@ extraAlloyConfig: |
   }
 ```
 
-**`logsProcessStages`** — injects pipeline stages between log collection and Loki. Use this to parse and label your logs without creating a separate log source:
+**`logsProcessStages`** — inject pipeline stages between log collection and Loki (parse log levels, extract fields, etc.):
 
 ```yaml
 logsProcessStages: |
@@ -179,7 +168,7 @@ See the [Alloy documentation](https://grafana.com/docs/alloy/latest/reference/co
 
 ---
 
-## Stack
+## 📦 Stack
 
 | Component | Chart | Version | Role |
 |-----------|-------|---------|------|
@@ -192,24 +181,24 @@ See the [Alloy documentation](https://grafana.com/docs/alloy/latest/reference/co
 | **Tempo** | `grafana/tempo` | 1.24.4 | Trace storage |
 | **Grafana** | `grafana/grafana` | 10.5.15 | Visualization |
 
-> **Metrics only:** If you only need metrics + Grafana (no logs, no traces), use [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) instead. It bundles Prometheus Operator, Grafana, node-exporter and kube-state-metrics in a single chart.
+> 💡 **Metrics only?** Use [`kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) — it bundles Prometheus Operator, Grafana, node-exporter and kube-state-metrics in a single chart.
 >
-> **Cloud / Grafana Cloud:** If you run on a managed Kubernetes (EKS, GKE, AKS) and want to send telemetry to Grafana Cloud instead of self-hosting the storage, use [`k8s-monitoring`](https://github.com/grafana/k8s-monitoring-helm) — Grafana's official chart for that use case. This chart is the right choice when you self-host the full MELT stack on-prem or on a bare cluster.
+> ☁️ **Grafana Cloud?** Use [`k8s-monitoring`](https://github.com/grafana/k8s-monitoring-helm) — Grafana's official chart for managed Kubernetes sending telemetry to Grafana Cloud. This chart is the right choice when you self-host the full MELT stack.
 
 ---
 
-## Dashboards
+## 📊 Dashboards
 
-The following dashboards are **automatically installed** at startup — nothing to do:
+The following dashboards are **automatically installed** at startup:
 
-| Dashboard | Grafana.com ID |
-|-----------|---------------|
+| Dashboard | ID |
+|-----------|----|
 | Kubernetes / Views / Global | [15757](https://grafana.com/grafana/dashboards/15757) |
 | Kubernetes / Views / Namespaces | [15758](https://grafana.com/grafana/dashboards/15758) |
 | Kubernetes / Views / Nodes | [15759](https://grafana.com/grafana/dashboards/15759) |
 | Kubernetes / Views / Pods | [15760](https://grafana.com/grafana/dashboards/15760) |
 
-To disable a dashboard, set it to `null` in your `values.yaml`:
+To disable a dashboard:
 
 ```yaml
 grafana:
@@ -217,4 +206,3 @@ grafana:
     kubernetes:
       k8s-views-nodes: null
 ```
-

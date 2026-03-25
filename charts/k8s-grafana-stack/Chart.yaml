@@ -3,6 +3,8 @@ name: k8s-grafana-stack
 description: Complete Grafana observability stack — metrics, logs, traces collected by Alloy
 type: application
 version: 0.2.18
+annotations:
+  artifacthub.io/logoURL: https://raw.githubusercontent.com/romain-malfroid/k8s-grafana-stack/main/docs/logo.png
 
 dependencies:
   # Collection — Alloy handles metrics, logs and traces
