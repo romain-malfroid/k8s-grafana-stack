@@ -4,8 +4,6 @@
 
 ![Architecture](docs/Alloy.png)
 
----
-
 ## ✨ What's included
 
 - 🔍 **Auto-discovery** — Alloy scrapes cluster metrics and pod logs automatically
@@ -95,14 +93,6 @@ loki:
 tempo:
   enabled: false  # disables trace storage and collection
 ```
-
-| Use case | Config |
-|----------|--------|
-| Full stack (default) | all enabled |
-| Metrics only | `loki.enabled: false` + `tempo.enabled: false` |
-| Metrics + logs | `tempo.enabled: false` |
-| Logs only | `prometheus.enabled: false` + `tempo.enabled: false` |
-
 ### 🛠️ Common overrides
 
 | Key | Description | Default |
