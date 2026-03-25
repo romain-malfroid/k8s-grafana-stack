@@ -2,7 +2,7 @@
 
 > Helm chart for a complete Kubernetes observability stack — metrics, logs and traces, collected by Alloy and visualized in Grafana.
 
-![Architecture](docs/Alloy.png)
+![Architecture](https://raw.githubusercontent.com/romain-malfroid/k8s-grafana-stack/main/docs/Alloy.png)
 
 ## ✨ What's included
 
