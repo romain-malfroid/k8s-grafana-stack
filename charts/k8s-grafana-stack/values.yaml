@@ -194,6 +194,9 @@ loki:
 # ============================================================
 tempo:
   enabled: true
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: "http://k8s-grafana-stack-prometheus-server/api/v1/write"
   tempo:
     resources:
       requests:
