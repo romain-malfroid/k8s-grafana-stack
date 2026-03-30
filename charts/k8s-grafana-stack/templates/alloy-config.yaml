@@ -315,10 +315,8 @@ data:
     // ============================================================
     // METRICS — OTLP receiver → Prometheus remote write
     // ============================================================
-    otelcol.exporter.prometheusremotewrite "default" {
-      endpoint {
-        url = "http://{{ .Release.Name }}-prometheus-server/api/v1/write"
-      }
+    otelcol.exporter.prometheus "otlp_metrics" {
+      forward_to = [prometheus.remote_write.default.receiver]
     }
     {{- end }}
 
@@ -338,7 +336,7 @@ data:
         traces  = [otelcol.exporter.otlp.tempo.input]
         {{- end }}
         {{- if .Values.collection.otlp.metrics.enabled }}
-        metrics = [otelcol.exporter.prometheusremotewrite.default.input]
+        metrics = [otelcol.exporter.prometheus.otlp_metrics.input]
         {{- end }}
         {{- if .Values.collection.otlp.logs.enabled }}
         logs    = [otelcol.exporter.loki.default.input]

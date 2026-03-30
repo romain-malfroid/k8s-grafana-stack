@@ -238,7 +238,7 @@ tempo:
       storage:
         path: "/var/tempo/metrics"
       traces_storage:
-        path: "/var/tempo/traces"
+        path: "/var/tempo/generator-traces"
     overrides:
       defaults:
         metrics_generator:
@@ -248,11 +248,11 @@ tempo:
             - service-graphs
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
         cpu: 300m
         memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
     retention: 24h
   livenessProbe:
     httpGet:
