@@ -30,18 +30,17 @@ clusterName: "local"
 #                          ⚠ Hybrid may cause metric duplication if an app does both
 collection:
   scraping:
-    enabled: true   # Prometheus scraping — pull metrics from pods via prometheus.io/scrape annotations
+    enabled: true # Prometheus scraping — pull metrics from pods via prometheus.io/scrape annotations
   logs:
     stdout:
       enabled: true # collect pod stdout logs via Kubernetes API (independent from scraping)
   otlp:
     metrics:
-      enabled: false  # receive OTLP metrics from apps → Prometheus
+      enabled: false # receive OTLP metrics from apps → Prometheus
     logs:
-      enabled: false  # receive OTLP logs from apps → Loki  (requires loki.enabled: true)
+      enabled: false # receive OTLP logs from apps → Loki  (requires loki.enabled: true)
     traces:
-      enabled: true   # receive OTLP traces from apps → Tempo (requires tempo.enabled: true)
-
+      enabled: true # receive OTLP traces from apps → Tempo (requires tempo.enabled: true)
 
 # ============================================================
 # EXTRA ALLOY CONFIG — custom scrape jobs, etc.
@@ -178,7 +177,7 @@ loki:
   lokiCanary:
     extraArgs:
       - -labelname=service_name
-      - -labelvalue=loki-canary
+      - -labelvalue=k8s-grafana-stack-loki-canary
   loki:
     auth_enabled: false
     commonConfig:
@@ -228,6 +227,16 @@ tempo:
     metricsGenerator:
       enabled: true
       remoteWriteUrl: "http://k8s-grafana-stack-prometheus-server/api/v1/write"
+      processor:
+        span_metrics:
+          enable_target_info: true
+        service_graphs:
+          wait: 10s
+          max_items: 10000
+      storage:
+        path: "/var/tempo/metrics"
+      traces_storage:
+        path: "/var/tempo/traces"
     resources:
       requests:
         cpu: 100m
