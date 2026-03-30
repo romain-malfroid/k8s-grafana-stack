@@ -44,9 +44,6 @@ data:
         source_labels = ["__meta_kubernetes_pod_node_name"]
         target_label  = "node"
       }
-      // Set instance = node hostname so community dashboards (k8s-views-nodes etc.)
-      // can match via instance="$instance" — without this, instance defaults to
-      // the pod IP:9100 which does not match the dashboard's $instance variable.
       rule {
         source_labels = ["__meta_kubernetes_pod_node_name"]
         target_label  = "instance"
@@ -120,6 +117,7 @@ data:
       bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
     }
 
+    {{- if .Values.collection.scraping.enabled }}
     // ============================================================
     // METRICS — annotation-based pod scraping (prometheus.io/scrape: "true")
     // ============================================================
@@ -196,6 +194,7 @@ data:
       job_name        = "kubernetes-pods"
       scrape_interval = "30s"
     }
+    {{- end }}
 
     // ============================================================
     // METRICS — remote write to Prometheus
@@ -212,8 +211,9 @@ data:
 
     {{- if .Values.loki.enabled }}
     // ============================================================
-    // LOGS — pod logs via Kubernetes API
+    // LOGS — pod logs via Kubernetes API (stdout)
     // ============================================================
+    {{- if .Values.collection.scraping.enabled }}
     discovery.kubernetes "pods" {
       role = "pod"
     }
@@ -293,6 +293,16 @@ data:
       log_format = "logfmt"
       forward_to = [loki.write.default.receiver]
     }
+    {{- end }}
+
+    {{- if .Values.collection.otlp.logs.enabled }}
+    // ============================================================
+    // LOGS — OTLP receiver → Loki
+    // ============================================================
+    otelcol.exporter.loki "default" {
+      forward_to = [loki.write.default.receiver]
+    }
+    {{- end }}
 
     loki.write "default" {
       endpoint {
@@ -301,9 +311,20 @@ data:
     }
     {{- end }}
 
-    {{- if .Values.tempo.enabled }}
+    {{- if .Values.collection.otlp.metrics.enabled }}
     // ============================================================
-    // TRACES — OTLP receiver → Tempo
+    // METRICS — OTLP receiver → Prometheus remote write
+    // ============================================================
+    otelcol.exporter.prometheusremotewrite "default" {
+      endpoint {
+        url = "http://{{ .Release.Name }}-prometheus-server/api/v1/write"
+      }
+    }
+    {{- end }}
+
+    {{- if or .Values.collection.otlp.traces.enabled .Values.collection.otlp.metrics.enabled .Values.collection.otlp.logs.enabled }}
+    // ============================================================
+    // OTLP receiver — accepts metrics, logs and/or traces from apps
     // ============================================================
     otelcol.receiver.otlp "default" {
       grpc {
@@ -313,10 +334,23 @@ data:
         endpoint = "0.0.0.0:4318"
       }
       output {
-        traces = [otelcol.exporter.otlp.tempo.input]
+        {{- if .Values.collection.otlp.traces.enabled }}
+        traces  = [otelcol.exporter.otlp.tempo.input]
+        {{- end }}
+        {{- if .Values.collection.otlp.metrics.enabled }}
+        metrics = [otelcol.exporter.prometheusremotewrite.default.input]
+        {{- end }}
+        {{- if .Values.collection.otlp.logs.enabled }}
+        logs    = [otelcol.exporter.loki.default.input]
+        {{- end }}
       }
     }
+    {{- end }}
 
+    {{- if and .Values.tempo.enabled .Values.collection.otlp.traces.enabled }}
+    // ============================================================
+    // TRACES — OTLP exporter → Tempo
+    // ============================================================
     otelcol.exporter.otlp "tempo" {
       client {
         endpoint = "{{ .Release.Name }}-tempo:4317"

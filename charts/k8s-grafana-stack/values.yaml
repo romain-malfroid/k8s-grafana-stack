@@ -13,6 +13,32 @@
 # Name added as "cluster" label on all metrics (used by dashboards)
 clusterName: "local"
 
+# ============================================================
+# COLLECTION MODES
+# ============================================================
+# Two modes can be combined (hybrid):
+#
+#   scraping: Alloy pulls metrics from pods exposing /metrics (or /actuator/prometheus)
+#             and reads logs from pod stdout via the Kubernetes API
+#   otlp:     Apps push metrics, logs and traces directly to Alloy via OTLP
+#
+# Traces always require OTLP — there is no pull equivalent.
+#
+#   Pull only (default):   scraping.enabled: true  / otlp.metrics: false / otlp.logs: false
+#   OTLP only:             scraping.enabled: false / otlp.metrics: true  / otlp.logs: true
+#   Hybrid:                scraping.enabled: true  / otlp.metrics: true  / otlp.logs: true
+#                          ⚠ Hybrid may cause metric duplication if an app does both
+collection:
+  scraping:
+    enabled: true   # pull metrics via prometheus.io/scrape annotations + collect pod stdout logs
+  otlp:
+    metrics:
+      enabled: false  # receive OTLP metrics from apps → Prometheus
+    logs:
+      enabled: false  # receive OTLP logs from apps → Loki  (requires loki.enabled: true)
+    traces:
+      enabled: true   # receive OTLP traces from apps → Tempo (requires tempo.enabled: true)
+
 
 # ============================================================
 # EXTRA ALLOY CONFIG — custom scrape jobs, etc.
@@ -194,10 +220,11 @@ loki:
 # ============================================================
 tempo:
   enabled: true
-  metricsGenerator:
-    enabled: true
-    remoteWriteUrl: "http://k8s-grafana-stack-prometheus-server/api/v1/write"
   tempo:
+    memBallastSizeMbs: 0
+    metricsGenerator:
+      enabled: true
+      remoteWriteUrl: "http://k8s-grafana-stack-prometheus-server/api/v1/write"
     resources:
       requests:
         cpu: 100m
@@ -206,6 +233,22 @@ tempo:
         cpu: 300m
         memory: 512Mi
     retention: 24h
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: 3200
+      initialDelaySeconds: 45
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 10
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 3200
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 10
   persistence:
     enabled: true
     size: 5Gi

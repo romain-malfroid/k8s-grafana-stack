@@ -102,9 +102,53 @@ tempo:
 | `prometheus.server.retention` | Metrics retention period | `7d` |
 | `tempo.tempo.retention` | Traces retention period | `24h` |
 
-### 📡 Scrape your app metrics
+### 📡 Collection modes
 
-Add these annotations to your pod template and Alloy will scrape it automatically:
+The chart supports two collection modes that can be combined:
+
+| Mode | Metrics | Logs | Traces |
+|------|---------|------|--------|
+| **Pull (default)** | Alloy scrapes `/metrics` via annotations | Alloy reads pod stdout | OTLP push |
+| **OTLP push** | Apps push via OTLP | Apps push via OTLP | OTLP push |
+| **Hybrid** | Both | Both | OTLP push |
+
+> ⚠️ In hybrid mode, an app that both exposes `/metrics` AND pushes OTLP metrics will have its metrics duplicated in Prometheus.
+
+**Pull mode** (default — no config needed):
+
+```yaml
+collection:
+  scraping:
+    enabled: true   # default
+  otlp:
+    metrics:
+      enabled: false  # default
+    logs:
+      enabled: false  # default
+    traces:
+      enabled: true   # default
+```
+
+**OTLP mode** (apps push all signals):
+
+```yaml
+collection:
+  scraping:
+    enabled: false
+  otlp:
+    metrics:
+      enabled: true
+    logs:
+      enabled: true
+    traces:
+      enabled: true
+```
+
+Apps send to Alloy at:
+- gRPC: `k8s-grafana-stack-alloy.monitoring.svc:4317`
+- HTTP: `k8s-grafana-stack-alloy.monitoring.svc:4318`
+
+**Pull — scrape annotations:**
 
 ```yaml
 # In your Deployment / StatefulSet, under spec.template.metadata
@@ -112,7 +156,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8080"     # port your app exposes metrics on
-    prometheus.io/path: "/metrics" # optional, defaults to /metrics
+    prometheus.io/path: "/metrics" # optional — use /actuator/prometheus for Spring Boot
 ```
 
 ### 🏷️ Kubernetes labeling conventions
