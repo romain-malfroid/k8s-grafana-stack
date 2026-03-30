@@ -236,22 +236,22 @@ tempo:
         cpu: 300m
         memory: 512Mi
     retention: 24h
-    livenessProbe:
-      httpGet:
-        path: /ready
-        port: 3200
-      initialDelaySeconds: 45
-      periodSeconds: 15
-      timeoutSeconds: 10
-      failureThreshold: 10
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: 3200
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 10
-      failureThreshold: 10
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: 3200
+    initialDelaySeconds: 45
+    periodSeconds: 15
+    timeoutSeconds: 10
+    failureThreshold: 10
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 3200
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 10
   persistence:
     enabled: true
     size: 5Gi
