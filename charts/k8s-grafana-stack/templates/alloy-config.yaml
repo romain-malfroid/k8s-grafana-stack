@@ -213,7 +213,7 @@ data:
     // ============================================================
     // LOGS — pod logs via Kubernetes API (stdout)
     // ============================================================
-    {{- if .Values.collection.scraping.enabled }}
+    {{- if .Values.collection.logs.stdout.enabled }}
     discovery.kubernetes "pods" {
       role = "pod"
     }

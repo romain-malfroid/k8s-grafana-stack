@@ -30,7 +30,10 @@ clusterName: "local"
 #                          ⚠ Hybrid may cause metric duplication if an app does both
 collection:
   scraping:
-    enabled: true   # pull metrics via prometheus.io/scrape annotations + collect pod stdout logs
+    enabled: true   # Prometheus scraping — pull metrics from pods via prometheus.io/scrape annotations
+  logs:
+    stdout:
+      enabled: true # collect pod stdout logs via Kubernetes API (independent from scraping)
   otlp:
     metrics:
       enabled: false  # receive OTLP metrics from apps → Prometheus

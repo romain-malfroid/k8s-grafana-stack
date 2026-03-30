@@ -106,40 +106,44 @@ tempo:
 
 The chart supports two collection modes that can be combined:
 
-| Mode | Metrics | Logs | Traces |
-|------|---------|------|--------|
-| **Pull (default)** | Alloy scrapes `/metrics` via annotations | Alloy reads pod stdout | OTLP push |
-| **OTLP push** | Apps push via OTLP | Apps push via OTLP | OTLP push |
-| **Hybrid** | Both | Both | OTLP push |
+Metrics scraping, stdout log collection and OTLP reception are **independent** — mix them freely:
 
-> ⚠️ In hybrid mode, an app that both exposes `/metrics` AND pushes OTLP metrics will have its metrics duplicated in Prometheus.
+| Flag | Default | Description |
+|------|---------|-------------|
+| `collection.scraping.enabled` | `true` | Prometheus scraping — pull metrics from pods via `prometheus.io/scrape` annotations |
+| `collection.logs.stdout.enabled` | `true` | Collect pod stdout logs via Kubernetes API |
+| `collection.otlp.metrics.enabled` | `false` | Receive OTLP metrics from apps → Prometheus |
+| `collection.otlp.logs.enabled` | `false` | Receive OTLP logs from apps → Loki |
+| `collection.otlp.traces.enabled` | `true` | Receive OTLP traces from apps → Tempo |
 
-**Pull mode** (default — no config needed):
+> ⚠️ Enabling both `scraping` and `otlp.metrics` for the same app will duplicate its metrics in Prometheus.
 
-```yaml
-collection:
-  scraping:
-    enabled: true   # default
-  otlp:
-    metrics:
-      enabled: false  # default
-    logs:
-      enabled: false  # default
-    traces:
-      enabled: true   # default
-```
-
-**OTLP mode** (apps push all signals):
+**Examples:**
 
 ```yaml
+# Spring Boot — OTLP metrics + traces, stdout logs (logs via OTLP not yet supported in SB 3.3.x)
 collection:
   scraping:
     enabled: false
+  logs:
+    stdout:
+      enabled: true
   otlp:
     metrics:
       enabled: true
-    logs:
+    traces:
       enabled: true
+
+# Pure Prometheus pull
+collection:
+  scraping:
+    enabled: true
+  logs:
+    stdout:
+      enabled: true
+  otlp:
+    metrics:
+      enabled: false
     traces:
       enabled: true
 ```
