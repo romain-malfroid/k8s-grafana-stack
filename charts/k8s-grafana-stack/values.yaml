@@ -228,6 +228,8 @@ tempo:
       enabled: true
       remoteWriteUrl: "http://k8s-grafana-stack-prometheus-server/api/v1/write"
       processor:
+        local_blocks:
+          flush_to_storage: true
         span_metrics:
           enable_target_info: true
         service_graphs:
@@ -237,6 +239,13 @@ tempo:
         path: "/var/tempo/metrics"
       traces_storage:
         path: "/var/tempo/traces"
+    overrides:
+      defaults:
+        metrics_generator:
+          processors:
+            - local-blocks
+            - span-metrics
+            - service-graphs
     resources:
       requests:
         cpu: 100m

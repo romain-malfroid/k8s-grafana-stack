@@ -2,7 +2,7 @@ apiVersion: v2
 name: k8s-grafana-stack
 description: Complete Grafana observability stack — metrics, logs, traces collected by Alloy
 type: application
-version: 0.2.28
+version: 0.2.29
 icon: https://raw.githubusercontent.com/romain-malfroid/k8s-grafana-stack/main/docs/logo.png
 
 dependencies:
