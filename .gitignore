@@ -1,3 +1,5 @@
 charts/k8s-grafana-stack/charts/
 *.tgz
 values.local.yaml
+
+.claude
