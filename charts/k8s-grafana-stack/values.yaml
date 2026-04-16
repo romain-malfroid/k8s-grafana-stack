@@ -73,7 +73,15 @@ alloy:
       name: "k8s-grafana-stack-alloy-config" # Must match release name + "-alloy-config"
       key: config.alloy
     controller:
-      type: statefulset
+      type: deployment
+      replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
     extraPorts:
       - name: otlp-grpc
         port: 4317

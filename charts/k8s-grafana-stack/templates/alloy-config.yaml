@@ -322,6 +322,43 @@ data:
 
     {{- if or .Values.collection.otlp.traces.enabled .Values.collection.otlp.metrics.enabled .Values.collection.otlp.logs.enabled }}
     // ============================================================
+    // OTLP — memory limiter (stabilité sous charge)
+    // ============================================================
+    otelcol.processor.memory_limiter "default" {
+      check_interval         = "1s"
+      limit_percentage       = 75
+      spike_limit_percentage = 20
+      output {
+        {{- if .Values.collection.otlp.traces.enabled }}
+        traces  = [otelcol.processor.batch.default.input]
+        {{- end }}
+        {{- if .Values.collection.otlp.metrics.enabled }}
+        metrics = [otelcol.processor.batch.default.input]
+        {{- end }}
+        {{- if .Values.collection.otlp.logs.enabled }}
+        logs    = [otelcol.processor.batch.default.input]
+        {{- end }}
+      }
+    }
+
+    // ============================================================
+    // OTLP — batch processor (regroupement avant export)
+    // ============================================================
+    otelcol.processor.batch "default" {
+      output {
+        {{- if .Values.collection.otlp.traces.enabled }}
+        traces  = [otelcol.exporter.otlp.tempo.input]
+        {{- end }}
+        {{- if .Values.collection.otlp.metrics.enabled }}
+        metrics = [otelcol.exporter.prometheus.otlp_metrics.input]
+        {{- end }}
+        {{- if .Values.collection.otlp.logs.enabled }}
+        logs    = [otelcol.exporter.loki.default.input]
+        {{- end }}
+      }
+    }
+
+    // ============================================================
     // OTLP receiver — accepts metrics, logs and/or traces from apps
     // ============================================================
     otelcol.receiver.otlp "default" {
@@ -333,13 +370,13 @@ data:
       }
       output {
         {{- if .Values.collection.otlp.traces.enabled }}
-        traces  = [otelcol.exporter.otlp.tempo.input]
+        traces  = [otelcol.processor.memory_limiter.default.input]
         {{- end }}
         {{- if .Values.collection.otlp.metrics.enabled }}
-        metrics = [otelcol.exporter.prometheus.otlp_metrics.input]
+        metrics = [otelcol.processor.memory_limiter.default.input]
         {{- end }}
         {{- if .Values.collection.otlp.logs.enabled }}
-        logs    = [otelcol.exporter.loki.default.input]
+        logs    = [otelcol.processor.memory_limiter.default.input]
         {{- end }}
       }
     }
