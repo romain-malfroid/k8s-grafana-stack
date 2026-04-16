@@ -72,9 +72,6 @@ alloy:
       create: false
       name: "k8s-grafana-stack-alloy-config" # Must match release name + "-alloy-config"
       key: config.alloy
-    controller:
-      type: deployment
-      replicas: 2
     resources:
       requests:
         cpu: 100m
@@ -91,6 +88,9 @@ alloy:
         port: 4318
         targetPort: 4318
         protocol: TCP
+  controller:
+    type: deployment
+    replicas: 2
   serviceAccount:
     create: true
   rbac:
